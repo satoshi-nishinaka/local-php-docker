@@ -227,9 +227,3 @@ class EvalExecutor
         return $value;
     }
 }
-
-function customErrorHandler(int $errno, string $errstr, string $errfile, int $errline, array $errcontext):bool
-{
-    echo $errstr;
-    return true;
-}
