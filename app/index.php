@@ -4,9 +4,9 @@ header("Content-Type: text/html; charset=UTF-8");
 
 mb_internal_encoding("UTF-8");
 mb_regex_encoding("UTF-8");
-include_once "common.php";
 
 error_reporting(E_ALL);
+
 ?>
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
@@ -91,7 +91,6 @@ error_reporting(E_ALL);
 </div>
 <h1 id="top"><span style="background-color:white;">PHP実行スクリプト</span>　≪ <?php echo $_SERVER['REQUEST_METHOD'] ?> ≫</h1>
 <p class="php_official"><a href="https://www.php.net/" target="_blank">[PHP: Hypertext Preprocessor]</a></p>
-<p><a href="./" class="btn btn-default btn-warning">back</a></p>
 
 <?php
 
@@ -185,7 +184,7 @@ class PhpDebug
           return;
         }
         $script = trim(stripslashes($this->receive_strings));
-        $script = mb_htmlentity($script);
+        $script = mbHtmlEntity($script);
         foreach (explode("\n", preg_replace(array("/\r?\n/", "/<br( \/)?>\n?/i"), "\n", $script)) as $Line) {
           $outputText .= str_repeat("&nbsp;", $indentSize) . rtrim($Line) . "\n";
         }
@@ -216,15 +215,15 @@ class PhpDebug
     $buffer = [];
     $script = preg_replace("/(^<\?(php)?)|(\?>$)/", "", trim($this->receive_strings));
 
-    if (strlen($script) != 0 && !endwith($script, ';')) {
+    if (strlen($script) != 0 && !str_ends_with($script, ';')) {
       $script .= ";";
     }
 
-    if (strlen($script) != 0) {
+    if ($script) {
       $startTime = microtime(true);
       for ($i = 0; $i < $this->repeatCounter; $i++) {
         $buffer[] = ($this->usePreTag ? "<pre>\n" : "");
-        $buffer[] = $script;
+        eval($script);
         $buffer[] = ($this->usePreTag ? "</pre>\n" : "");
         // if($happendException == true) {
         //   break;
@@ -232,7 +231,8 @@ class PhpDebug
       }
       $endTime = microtime(true);
       $totalTime = $endTime - $startTime;
-      $buffer[] = "\n<br /><b>" . sprintf("%f", $totalTime) . "秒(" . $this->limitTime . ")</b>\n";
+      $buffer[] = '<br /><hr />';
+      $buffer[] = '<b>' . sprintf("%f", $totalTime) . '秒(' . $this->limitTime . ')</b>';
       if ($totalTime > 60) {
         $buffer[] = sprintf("<br /><b>%.4f分</b>\n", $totalTime / 60);
       }
@@ -247,7 +247,7 @@ class PhpDebug
     foreach ($list as $key => $value) {
       $buffer[] = "<tr>";
       $buffer[] = "<th>{$key}</th>";
-      $buffer[] = "<td>" . mb_debughtmlentity($value) . '</td>';
+      $buffer[] = "<td>" . $this->mbDebugHtmlEntity($value) . '</td>';
       $buffer[] = '</tr>';
     }
     $buffer[]= "</table>\n";
@@ -287,6 +287,30 @@ class PhpDebug
     }
 
     echo implode("\n", $buffer);
+  }
+
+  private function mbDebugHtmlEntity($value): string
+  {
+      if (is_bool($value)) {
+          return $value ? 'TRUE' : 'FALSE';
+      }
+      if (is_numeric($value)) {
+          return (string)$value;
+      }
+
+      if (is_array($value)) {
+          $buffer = [];
+          foreach ($value as $k => $v) {
+              $buffer[] = "{$k}: " . $this->mbDebugHtmlEntity($v) . "<br />";
+          }
+
+          return implode("\n", $buffer);
+      }
+
+      if (!$value) {
+          return "<b>empty</b>";
+      }
+      return $value;
   }
 }
 
