@@ -1,0 +1,13 @@
+version: '3'
+services:
+  localphp:
+    build: .
+    container_name: localdevelop
+    ports:
+      - "8081:80"
+    volumes:
+      - ./app:/app
+    environment:
+      - CAKEPHP_ENV=local
+      - LANG=ja_JP.UTF-8
+      - TZ=Asia/Tokyo
