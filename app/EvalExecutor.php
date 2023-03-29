@@ -7,13 +7,13 @@ class EvalExecutor
     public int $repeatCounter = 1;
     public int $limitTime = 30;
     public bool $usePreTag = false;
-    public ?string $convert = null;
+    public string $convert = 'eval';
     public string $receive_strings = '';
     public int $indentSize = 0;
 
     public function __construct()
     {
-        if ($_SERVER['REQUEST_METHOD'] !== "POST") {
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
             return;
         }
 
@@ -29,20 +29,20 @@ class EvalExecutor
     public function output(): void
     {
         $buffer = [];
-        if (!is_null($this->convert)) {
+        if ($this->convert !== 'eval') {
             $buffer[] = '<pre>';
             switch ($this->convert) {
-                case "strtolowwer":
+                case 'strtolowwer':
                     $buffer[] = '<textarea rows="20" cols="" style="width:90%;height:40%;" >' . strtolower($this->receive_strings) . '</textarea><br />';
                     break;
-                case  "strtoupper":
+                case  'strtoupper':
                     $buffer[] = '<textarea rows="20" cols="" style="width:90%;height:40%;" >' . strtoupper($this->receive_strings) . '</textarea><br />';
                     break;
-                case "mb_convert_hankaku":
+                case 'mb_convert_hankaku':
                     // 入力文字列を半角化の場合
                     $buffer[] = '<textarea rows="20" cols="" style="width:90%;height:40%;" >' . mb_convert_kana($this->receive_strings, "as") . '</textarea><br />';
                     break;
-                case "print":
+                case 'print':
                     // テキストをPHPのPRINT文に変換する
                     $text = preg_replace("/\r?\n/", "\n", $this->receive_strings);
                     $buffer[] = '<textarea rows="20" cols="" style="width:90%;height:40%;" onFocus="this.select()">';
@@ -54,7 +54,7 @@ class EvalExecutor
             }
             $buffer[] = '</pre>';
         } else {
-            $buffer[] = '<br />' . date("Y/m/d H:i:s") . '<br />';
+            $buffer[] = '<br />' . date('Y/m/d H:i:s') . '<br />';
         }
 
         echo implode("\n", $buffer);
@@ -103,23 +103,29 @@ class EvalExecutor
         $script = preg_replace("/(^<\?(php)?)|(\?>$)/", "", trim($this->receive_strings));
 
         if (strlen($script) != 0 && !str_ends_with($script, ';')) {
-            $script .= ";";
+            $script .= ';';
         }
 
         if ($script) {
             $startTime = microtime(true);
             for ($i = 0; $i < $this->repeatCounter; $i++) {
                 $buffer[] = ($this->usePreTag ? "<pre>\n" : "");
-                eval($script);
+                try {
+                    eval($script);
+                } catch (\Exception $e) {
+                    $buffer = array_merge($buffer, [
+                        '<pre>',
+                        $e->getMessage(),
+                        '',
+                        '</pre>',
+                    ]);
+                }
                 $buffer[] = ($this->usePreTag ? "</pre>\n" : "");
-                // if($happendException == true) {
-                //   break;
-                // }
             }
             $endTime = microtime(true);
             $totalTime = $endTime - $startTime;
             $buffer[] = '<br /><hr />';
-            $buffer[] = '<b>' . sprintf("%f", $totalTime) . '秒(' . $this->limitTime . ')</b>';
+            $buffer[] = '<b>' . sprintf('%f', $totalTime) . '秒(' . $this->limitTime . ')</b>';
             if ($totalTime > 60) {
                 $buffer[] = sprintf("<br /><b>%.4f分</b>\n", $totalTime / 60);
             }
@@ -132,9 +138,9 @@ class EvalExecutor
     {
         $buffer[] = '<table class=\'tbl\'>';
         foreach ($list as $key => $value) {
-            $buffer[] = "<tr>";
+            $buffer[] = '<tr>';
             $buffer[] = "<th>{$key}</th>";
-            $buffer[] = "<td>" . $this->mbDebugHtmlEntity($value) . '</td>';
+            $buffer[] = '<td>' . $this->mbDebugHtmlEntity($value) . '</td>';
             $buffer[] = '</tr>';
         }
         $buffer[] = "</table>\n";
@@ -144,23 +150,23 @@ class EvalExecutor
 
     private function _execute($mode): void
     {
-        if (!$mode) {
-            $this->executeEval();
-            return;
-        }
         switch ($mode) {
-            case "phpinfo":
+            case 'eval':
+                $this->executeEval();
+                return;
+
+            case 'phpinfo':
                 phpinfo();
                 return;
 
-            case "server" :
+            case 'server' :
                 echo '<h2>$_SERVER' . "</h2>\n";
                 echo '<pre>';
                 $this->writeTable($_SERVER);
                 echo '</pre>';
                 return;
 
-            case "indent" :
+            case 'indent' :
                 // インデント付与の場合
                 if (strlen($this->receive_strings) == 0) {
                     return;
@@ -173,13 +179,13 @@ class EvalExecutor
                 $script = trim(stripslashes($this->receive_strings));
                 $script = mbHtmlEntity($script);
                 foreach (explode("\n", preg_replace(array("/\r?\n/", "/<br( \/)?>\n?/i"), "\n", $script)) as $Line) {
-                    $outputText .= str_repeat("&nbsp;", $indentSize) . rtrim($Line) . "\n";
+                    $outputText .= str_repeat('&nbsp;', $indentSize) . rtrim($Line) . "\n";
                 }
                 echo "<textarea rows='20' cols='' class='form-control' onFocus='this.select()'>{$outputText}</textarea><br />\n";
                 return;
-            case "strlen" :
+            case 'strlen' :
                 echo "<input type='textbox' style='width:90%;' onFocus='this.select();' value='" . strlen($this->receive_strings) . "' />\n";
-                if (strpos($this->receive_strings, "\r\n") !== false) {
+                if (str_contains($this->receive_strings, "\r\n")) {
                     echo "<p>&yen;r&yen;n込み</p>";
                 } else if (strpos($this->receive_strings, "\n") !== false) {
                     echo "<p>&yen;n込み</p>";
@@ -220,4 +226,10 @@ class EvalExecutor
         }
         return $value;
     }
+}
+
+function customErrorHandler(int $errno, string $errstr, string $errfile, int $errline, array $errcontext):bool
+{
+    echo $errstr;
+    return true;
 }
