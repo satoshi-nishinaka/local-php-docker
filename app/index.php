@@ -169,7 +169,9 @@ class PhpDebug
 
       case "server" :
         echo '<h2>$_SERVER' . "</h2>\n";
+        echo '<pre>';
         $this->writeTable($_SERVER);
+        echo '</pre>';
         return;
 
       case "indent" :
@@ -243,7 +245,10 @@ class PhpDebug
   {
     $buffer[] = '<table class=\'tbl\'>';
     foreach ($list as $key => $value) {
-      $buffer[] = "<tr><th>{$key}</th><td>" . mb_debughtmlentity($value) . '</td></tr>';
+      $buffer[] = "<tr>";
+      $buffer[] = "<th>{$key}</th>";
+      $buffer[] = "<td>" . mb_debughtmlentity($value) . '</td>';
+      $buffer[] = '</tr>';
     }
     $buffer[]= "</table>\n";
 
