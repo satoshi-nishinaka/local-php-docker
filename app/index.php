@@ -31,7 +31,7 @@ $debugger = new EvalExecutor();
     <script src='https://oss.maxcdn.com/html5shiv/3.7.2/html5shiv.min.js'></script>
     <script src='https://oss.maxcdn.com/respond/1.4.2/respond.min.js'></script>
     <![endif]-->
-    <script type='text/javascript' src='js/jquery-2.1.1.min.js'></script>
+    <script src="https://code.jquery.com/jquery-3.7.0.min.js" integrity="sha256-2Pmvv0kuTBOenSvLm6bvfBSSHrUJ+3A7x6P5Ebd07/g=" crossorigin="anonymous"></script>
     <script type='text/javascript' src='js/tabIndent.js'></script>
     <script type='text/javascript'>
         $(document).ready(function() {
@@ -99,7 +99,7 @@ $debugger = new EvalExecutor();
 <form name='_form' method='post' action='<?= $_SERVER['PHP_SELF'] ?>'>
     <div>
         <input type='hidden' name='mode' value="eval" />
-        <textarea rows='20' cols='' class='form-control tabIndent' name='exescript'><?= $debugger->receive_strings ?></textarea><br />
+        <textarea rows='20' cols='' class='form-control tabIndent' name='exescript'><?= $debugger->receiveString ?></textarea><br />
         <input type='button' class='btn btn-primary' name='exe' value='実行' onclick='_form.submit();' />
         <input type='button' class='btn btn-info' name='reset' value='クリア' />
         実行回数<input type='text' class='form-control' name='counter' value='<?= $debugger->repeatCounter ?>' size='10' />回
